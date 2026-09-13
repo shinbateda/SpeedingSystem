@@ -1,0 +1,6 @@
+{
+  "name": "과속 단속 및 셔터 카메라 관제 시스템",
+  "description": "ESP32 및 라즈베리파이 기반 24GHz 도플러 레이더, 1단 1열 188 LED 전광판, 글로벌 셔터 카메라 및 태양광+35Ah 배터리 관제 시스템",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
