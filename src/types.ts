@@ -1,4 +1,4 @@
-export type TabType = 'monitor' | 'bom' | 'specs' | 'smartphone' | 'durability' | 'opensource';
+export type TabType = 'monitor' | 'bom' | 'power' | 'specs' | 'smartphone' | 'durability' | 'opensource';
 
 export interface Vehicle {
   id: number;
@@ -26,6 +26,18 @@ export interface BOMItem {
   spec: string;
   price: number;
   selected?: boolean;
+}
+
+export interface ComponentPowerItem {
+  name: string;
+  category: string;
+  voltageV: number;
+  currentMa: number;
+  peakWatts: number;
+  avgWatts: number;
+  dailyHours: number;
+  dailyWh: number;
+  dutyCycleDesc: string;
 }
 
 export interface CameraSpec {

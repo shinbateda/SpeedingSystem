@@ -8,6 +8,7 @@ import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { MonitoringTab } from './components/MonitoringTab';
 import { BomTab } from './components/BomTab';
+import { PowerTab } from './components/PowerTab';
 import { CameraSpecsTab } from './components/CameraSpecsTab';
 import { SmartphoneTab } from './components/SmartphoneTab';
 import { DurabilityTab } from './components/DurabilityTab';
@@ -128,6 +129,8 @@ export default function App() {
         )}
 
         {activeTab === 'bom' && <BomTab />}
+
+        {activeTab === 'power' && <PowerTab />}
 
         {activeTab === 'specs' && <CameraSpecsTab />}
 

@@ -345,7 +345,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
 
             <div className="absolute left-1/3 top-0 bottom-0 border-l-2 border-dashed border-amber-500/60 pointer-events-none flex items-center">
               <span className="text-[10px] bg-amber-950/90 text-amber-300 px-1 py-0.5 rounded rotate-90 -ml-3">
-                레이더 감지 (5만원)
+                HLK-LD2451 감지 (최대 100m)
               </span>
             </div>
             <div className="absolute left-2/3 top-0 bottom-0 border-l-2 border-solid border-red-500/80 pointer-events-none flex items-center">

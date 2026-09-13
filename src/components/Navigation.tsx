@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Calculator, Camera, Smartphone, Cpu, Github } from 'lucide-react';
+import { Activity, Calculator, Zap, Camera, Smartphone, Cpu, Github } from 'lucide-react';
 import { TabType } from '../types';
 
 interface NavigationProps {
@@ -11,10 +11,11 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
   const tabs = [
     { id: 'monitor' as TabType, label: '1. 모니터링 & LED 전광판', icon: Activity },
     { id: 'bom' as TabType, label: '2. BOM 구성 및 단가', icon: Calculator },
-    { id: 'specs' as TabType, label: '3. 셔터 카메라 규격', icon: Camera },
-    { id: 'smartphone' as TabType, label: '4. AP 모니터링 & 회로', icon: Smartphone },
-    { id: 'durability' as TabType, label: '5. RPi 내구성 & 양산 검토', icon: Cpu },
-    { id: 'opensource' as TabType, label: '6. GitHub Hub', icon: Github },
+    { id: 'power' as TabType, label: '3. 소모전력 & 태양광·배터리', icon: Zap },
+    { id: 'specs' as TabType, label: '4. 셔터 카메라 규격', icon: Camera },
+    { id: 'smartphone' as TabType, label: '5. AP 모니터링 & 회로', icon: Smartphone },
+    { id: 'durability' as TabType, label: '6. RPi 내구성 & 양산 검토', icon: Cpu },
+    { id: 'opensource' as TabType, label: '7. GitHub Hub', icon: Github },
   ];
 
   return (

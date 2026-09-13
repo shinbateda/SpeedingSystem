@@ -133,8 +133,8 @@ export const SmartphoneTab: React.FC<SmartphoneTabProps> = ({
 
           <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 font-mono text-xs text-slate-300">
             <div className="p-2 bg-slate-900 rounded border border-slate-800 flex justify-between items-center">
-              <span className="text-amber-400">[24GHz Doppler Radar]</span>
-              <span>→ GPIO 34 (도플러 펄스 계측)</span>
+              <span className="text-amber-400">[HLK-LD2451 24GHz FMCW]</span>
+              <span>→ UART RX/TX (115200) & GPIO OT1 (0~100m, BLE 앱 연동)</span>
             </div>
             <div className="p-2 bg-slate-900 rounded border border-slate-800 flex justify-between items-center">
               <span className="text-emerald-400">[1단1열 188 LED PCB]</span>

@@ -7,8 +7,8 @@ export const BomTab: React.FC = () => {
     {
       id: 'radar',
       category: '필수',
-      name: '도플러 레이더 센서',
-      spec: '24GHz 속도 측정 펄스 연동',
+      name: '24GHz FMCW 레이더 (HLK-LD2451)',
+      spec: 'Hi-Link HLK-LD2451 (5V 107mA, 최대 100m, UART/BLE/GPIO)',
       price: 50000,
     },
     {
