@@ -1,12 +1,19 @@
 import React from 'react';
-import { Gauge, Volume2, VolumeX } from 'lucide-react';
+import { Gauge, Volume2, VolumeX, Play, Square } from 'lucide-react';
 
 interface HeaderProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
+  isSimulating?: boolean;
+  onToggleSimulating?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ soundEnabled, onToggleSound }) => {
+export const Header: React.FC<HeaderProps> = ({
+  soundEnabled,
+  onToggleSound,
+  isSimulating = false,
+  onToggleSimulating,
+}) => {
   return (
     <header id="main-header" className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-lg">
       <div className="flex items-center space-x-3">
@@ -27,6 +34,32 @@ export const Header: React.FC<HeaderProps> = ({ soundEnabled, onToggleSound }) =
       </div>
 
       <div className="flex items-center space-x-2">
+        {/* Simulation Quick Control Button (Global Header) */}
+        {onToggleSimulating && (
+          <button
+            id="headerSimToggleBtn"
+            onClick={onToggleSimulating}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow ${
+              isSimulating
+                ? 'bg-red-600 hover:bg-red-500 text-white ring-2 ring-red-400/50 animate-pulse'
+                : 'bg-emerald-700 hover:bg-emerald-600 text-emerald-100 border border-emerald-500/50'
+            }`}
+            title={isSimulating ? '실시간 주행 시뮬레이션을 즉시 중지합니다' : '실시간 주행 시뮬레이션을 시작합니다'}
+          >
+            {isSimulating ? (
+              <>
+                <Square className="w-3.5 h-3.5 fill-white text-white" />
+                <span className="font-extrabold">시뮬레이션 중지</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 fill-white text-white" />
+                <span>시뮬레이션 시작</span>
+              </>
+            )}
+          </button>
+        )}
+
         <button
           id="soundToggleBtn"
           onClick={onToggleSound}

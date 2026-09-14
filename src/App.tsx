@@ -19,7 +19,7 @@ import { OpenSourceTab } from './components/OpenSourceTab';
 import { YouTubeTab } from './components/YouTubeTab';
 import { SnapshotModal } from './components/SnapshotModal';
 import { TabType, Vehicle, SnapshotRecord } from './types';
-import { Camera, Smartphone, Server, RotateCcw } from 'lucide-react';
+import { Camera, Smartphone, Server, RotateCcw, Square } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('monitor');
