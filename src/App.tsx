@@ -13,6 +13,7 @@ import { CameraSpecsTab } from './components/CameraSpecsTab';
 import { SmartphoneTab } from './components/SmartphoneTab';
 import { DurabilityTab } from './components/DurabilityTab';
 import { OpenSourceTab } from './components/OpenSourceTab';
+import { YouTubeTab } from './components/YouTubeTab';
 import { SnapshotModal } from './components/SnapshotModal';
 import { TabType, Vehicle, SnapshotRecord } from './types';
 
@@ -23,7 +24,56 @@ export default function App() {
   const [totalCarsCount, setTotalCarsCount] = useState<number>(0);
   const [overspeedCount, setOverspeedCount] = useState<number>(0);
   const [sdSavedCount, setSdSavedCount] = useState<number>(0);
-  const [recentSnapshots, setRecentSnapshots] = useState<SnapshotRecord[]>([]);
+  const [recentSnapshots, setRecentSnapshots] = useState<SnapshotRecord[]>([
+    {
+      id: 1726298100000,
+      time: '14:32:15',
+      date: '2026-09-14',
+      plate: '서울34가 8291',
+      speed: 48,
+      isOverspeed: true,
+    },
+    {
+      id: 1726297800000,
+      time: '11:15:40',
+      date: '2026-09-14',
+      plate: '경기88나 2390',
+      speed: 36,
+      isOverspeed: true,
+    },
+    {
+      id: 1726297200000,
+      time: '08:42:19',
+      date: '2026-09-14',
+      plate: '인천12다 7721',
+      speed: 64,
+      isOverspeed: true,
+    },
+    {
+      id: 1726211400000,
+      time: '18:20:05',
+      date: '2026-09-13',
+      plate: '부산55라 1094',
+      speed: 42,
+      isOverspeed: true,
+    },
+    {
+      id: 1726207800000,
+      time: '15:08:32',
+      date: '2026-09-13',
+      plate: '대구29마 4481',
+      speed: 57,
+      isOverspeed: true,
+    },
+    {
+      id: 1726121400000,
+      time: '20:12:44',
+      date: '2026-09-12',
+      plate: '대전77거 6112',
+      speed: 73,
+      isOverspeed: true,
+    },
+  ]);
   const [activeModalRecord, setActiveModalRecord] = useState<SnapshotRecord | null>(null);
   const [isFlashing, setIsFlashing] = useState<boolean>(false);
 
@@ -74,9 +124,11 @@ export default function App() {
 
       const now = new Date();
       const timeStr = now.toTimeString().split(' ')[0];
+      const dateStr = now.toISOString().split('T')[0];
       const record: SnapshotRecord = {
         id: vehicle.id || Date.now(),
         time: timeStr,
+        date: dateStr,
         plate: vehicle.plate || '12가 3456',
         speed: vehicle.speed || 40,
         isOverspeed: !!vehicle.isOverspeed,
@@ -88,7 +140,7 @@ export default function App() {
         playWarningSound();
         setOverspeedCount((prev) => prev + 1);
         setSdSavedCount((prev) => prev + 1);
-        setRecentSnapshots((prev) => [record, ...prev.slice(0, 7)]);
+        setRecentSnapshots((prev) => [record, ...prev.slice(0, 49)]);
       }
     },
     [playWarningSound]
@@ -146,6 +198,8 @@ export default function App() {
         {activeTab === 'durability' && <DurabilityTab />}
 
         {activeTab === 'opensource' && <OpenSourceTab />}
+
+        {activeTab === 'youtube' && <YouTubeTab />}
       </main>
 
       {/* Footer */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Calculator, Zap, Camera, Smartphone, Cpu, Github } from 'lucide-react';
+import { Activity, Calculator, Zap, Camera, Smartphone, Cpu, Github, Youtube } from 'lucide-react';
 import { TabType } from '../types';
 
 interface NavigationProps {
@@ -16,6 +16,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
     { id: 'smartphone' as TabType, label: '5. AP 모니터링 & 회로', icon: Smartphone },
     { id: 'durability' as TabType, label: '6. RPi 내구성 & 양산 검토', icon: Cpu },
     { id: 'opensource' as TabType, label: '7. GitHub Hub', icon: Github },
+    { id: 'youtube' as TabType, label: '8. 솔루션 유튜브 레퍼런스', icon: Youtube },
   ];
 
   return (

@@ -115,10 +115,10 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({ record, onClose })
             <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
               <span className="text-slate-500 flex items-center gap-1 mb-0.5">
                 <Clock className="w-3 h-3 text-slate-500" />
-                촬영 시각:
+                촬영 일시:
               </span>
               <span id="modalTime" className="text-slate-300 font-mono font-medium">
-                {record.time}
+                {record.date ? `${record.date} ` : ''}{record.time}
               </span>
             </div>
             <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">

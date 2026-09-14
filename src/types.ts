@@ -1,4 +1,24 @@
-export type TabType = 'monitor' | 'bom' | 'power' | 'specs' | 'smartphone' | 'durability' | 'opensource';
+export type TabType = 'monitor' | 'bom' | 'power' | 'specs' | 'smartphone' | 'durability' | 'opensource' | 'youtube';
+
+export interface YouTubeChannelItem {
+  id: string;
+  name: string;
+  handle: string;
+  category: 'radar' | 'camera' | 'led' | 'solar' | 'esp32';
+  categoryLabel: string;
+  channelUrl: string;
+  subscribers: string;
+  description: string;
+  coreTech: string[];
+  keyTopics: {
+    title: string;
+    description: string;
+    searchQuery: string;
+    url: string;
+  }[];
+  projectApplicationTip: string;
+  featured?: boolean;
+}
 
 export interface Vehicle {
   id: number;
@@ -14,6 +34,7 @@ export interface Vehicle {
 export interface SnapshotRecord {
   id: number;
   time: string;
+  date?: string; // YYYY-MM-DD
   plate: string;
   speed: number;
   isOverspeed: boolean;
