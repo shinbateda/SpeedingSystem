@@ -1,4 +1,14 @@
-export type TabType = 'monitor' | 'bom' | 'power' | 'specs' | 'smartphone' | 'durability' | 'opensource' | 'youtube';
+export type TabType =
+  | 'monitor'
+  | 'smartphone'
+  | 'server'
+  | 'opensource'
+  | 'youtube'
+  | 'bom'
+  | 'power'
+  | 'specs'
+  | 'interface'
+  | 'durability';
 
 export interface YouTubeChannelItem {
   id: string;

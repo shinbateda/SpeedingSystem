@@ -10,7 +10,9 @@ import { MonitoringTab } from './components/MonitoringTab';
 import { BomTab } from './components/BomTab';
 import { PowerTab } from './components/PowerTab';
 import { CameraSpecsTab } from './components/CameraSpecsTab';
+import { CameraInterfaceTab } from './components/CameraInterfaceTab';
 import { SmartphoneTab } from './components/SmartphoneTab';
+import { CentralServerTab } from './components/CentralServerTab';
 import { DurabilityTab } from './components/DurabilityTab';
 import { OpenSourceTab } from './components/OpenSourceTab';
 import { YouTubeTab } from './components/YouTubeTab';
@@ -79,6 +81,52 @@ export default function App() {
       date: '2026-09-12',
       plate: '대전77거 6112',
       speed: 73,
+      isOverspeed: true,
+      memo: '야간 73km/h 폭주 위반 - 즉시 고발 대상',
+      memoUpdatedAt: '2026-09-12 20:30:11',
+    },
+    {
+      id: 1726040800000,
+      time: '17:45:12',
+      date: '2026-09-11',
+      plate: '울산18하 3450',
+      speed: 46,
+      isOverspeed: true,
+    },
+    {
+      id: 1726027200000,
+      time: '08:14:28',
+      date: '2026-09-11',
+      plate: '경기42로 9012',
+      speed: 52,
+      isOverspeed: true,
+      memo: '스쿨존 등교시간대 단속 - 1차 계도장 통보',
+      memoUpdatedAt: '2026-09-11 08:30:00',
+    },
+    {
+      id: 1725945600000,
+      time: '14:20:10',
+      date: '2026-09-10',
+      plate: '서울59바 8819',
+      speed: 68,
+      isOverspeed: true,
+      memo: '경찰청 교통안전과 이첩 완료',
+      memoUpdatedAt: '2026-09-10 15:10:00',
+    },
+    {
+      id: 1725859200000,
+      time: '11:32:05',
+      date: '2026-09-09',
+      plate: '강원33조 5512',
+      speed: 54,
+      isOverspeed: true,
+    },
+    {
+      id: 1725772800000,
+      time: '09:05:40',
+      date: '2026-09-08',
+      plate: '충남62머 7193',
+      speed: 49,
       isOverspeed: true,
     },
   ]);
@@ -217,6 +265,7 @@ export default function App() {
             onUpdateMemo={handleUpdateMemo}
             soundEnabled={soundEnabled}
             speedLimit={speedLimit}
+            onNavigateTab={setActiveTab}
           />
         )}
 
@@ -230,11 +279,23 @@ export default function App() {
 
         {activeTab === 'specs' && <CameraSpecsTab />}
 
+        {activeTab === 'interface' && <CameraInterfaceTab />}
+
         {activeTab === 'smartphone' && (
           <SmartphoneTab
             speedLimit={speedLimit}
             onUpdateSpeedLimit={setSpeedLimit}
             recentSnapshots={recentSnapshots}
+            onOpenSnapshotModal={(rec) => setActiveModalRecord(rec)}
+            onTriggerShutter={handleTriggerShutter}
+            soundEnabled={soundEnabled}
+          />
+        )}
+
+        {activeTab === 'server' && (
+          <CentralServerTab
+            recentSnapshots={recentSnapshots}
+            speedLimit={speedLimit}
             onOpenSnapshotModal={(rec) => setActiveModalRecord(rec)}
           />
         )}

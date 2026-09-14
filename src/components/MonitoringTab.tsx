@@ -27,8 +27,12 @@ import {
   FileText,
   Edit3,
   Bookmark,
+  Smartphone,
+  ChevronRight,
+  Server,
 } from 'lucide-react';
 import { Vehicle, SnapshotRecord } from '../types';
+import { WeeklyOverspeedTrend } from './WeeklyOverspeedTrend';
 
 interface MonitoringTabProps {
   totalCarsCount: number;
@@ -40,6 +44,7 @@ interface MonitoringTabProps {
   onUpdateMemo?: (recordId: number, memo: string) => void;
   soundEnabled: boolean;
   speedLimit: number;
+  onNavigateTab?: (tab: any) => void;
 }
 
 const plateRegions = ['서울', '경기', '인천', '부산', '대구', '경남', '충남', '전북', '광주', '대전'];
@@ -114,6 +119,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
   onOpenSnapshotModal,
   onUpdateMemo,
   speedLimit,
+  onNavigateTab,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const vehiclesRef = useRef<Vehicle[]>([]);
@@ -528,15 +534,39 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
           </div>
         </div>
 
-        <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400">서버 전송 상태</p>
-            <p id="stat-server" className="text-xs font-bold text-emerald-400 mt-1">
-              AP 대기 (동기화 100%)
-            </p>
+        <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-400">원격 관제망 연동 상태</p>
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              정상 (100%)
+            </span>
           </div>
-          <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
-            <Wifi className="w-6 h-6" />
+
+          <div className="grid grid-cols-2 gap-1.5 mt-2">
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('smartphone')}
+              className="px-2 py-1.5 bg-slate-950 hover:bg-amber-500/20 border border-slate-800 hover:border-amber-500/50 rounded-lg text-left transition group cursor-pointer"
+              title="현장 스마트폰 과속 모니터링 탭 이동"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 group-hover:text-amber-300 font-semibold">2. 스마트폰</span>
+                <Smartphone className="w-3 h-3 text-amber-400" />
+              </div>
+              <p className="text-[11px] font-mono font-bold text-slate-200 mt-0.5">AP 모니터링</p>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('server')}
+              className="px-2 py-1.5 bg-slate-950 hover:bg-cyan-500/20 border border-slate-800 hover:border-cyan-500/50 rounded-lg text-left transition group cursor-pointer"
+              title="중앙 관제 서버 웹 모니터링 탭 이동"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 group-hover:text-cyan-300 font-semibold">3. 관제 서버</span>
+                <Server className="w-3 h-3 text-cyan-400" />
+              </div>
+              <p className="text-[11px] font-mono font-bold text-slate-200 mt-0.5">중앙 관제센터</p>
+            </button>
           </div>
         </div>
       </div>
@@ -1040,6 +1070,14 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
           )}
         </div>
       </div>
+
+      {/* 최근 7일간 과속 단속 추이 그래프 (Recharts) - 탭 맨 하단 배치 */}
+      <WeeklyOverspeedTrend
+        recentSnapshots={recentSnapshots}
+        speedLimit={speedLimit}
+        selectedDateFilter={selectedDateFilter}
+        onSelectDateFilter={(dateStr) => setSelectedDateFilter(dateStr)}
+      />
     </section>
   );
 };
