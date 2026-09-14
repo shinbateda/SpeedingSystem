@@ -24,6 +24,9 @@ import {
   Clock,
   Download,
   FileSpreadsheet,
+  FileText,
+  Edit3,
+  Bookmark,
 } from 'lucide-react';
 import { Vehicle, SnapshotRecord } from '../types';
 
@@ -34,6 +37,7 @@ interface MonitoringTabProps {
   recentSnapshots: SnapshotRecord[];
   onTriggerShutter: (vehicle: Partial<Vehicle>) => void;
   onOpenSnapshotModal: (record: SnapshotRecord) => void;
+  onUpdateMemo?: (recordId: number, memo: string) => void;
   soundEnabled: boolean;
   speedLimit: number;
 }
@@ -108,6 +112,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
   recentSnapshots,
   onTriggerShutter,
   onOpenSnapshotModal,
+  onUpdateMemo,
   speedLimit,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -137,6 +142,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
   const [selectedSpeedRange, setSelectedSpeedRange] = useState<string>('all'); // 'all' | '31-40' | '41-50' | '51-60' | '61+'
   const [searchPlateQuery, setSearchPlateQuery] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'latest' | 'speed_desc' | 'speed_asc'>('latest');
+  const [onlyWithMemo, setOnlyWithMemo] = useState<boolean>(false);
 
   // 추출 가능한 고유 날짜 목록
   const uniqueDates = React.useMemo(() => {
@@ -147,10 +153,20 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
     return Array.from(dates).sort((a, b) => b.localeCompare(a));
   }, [recentSnapshots]);
 
+  // 메모 작성된 기록 총 건수
+  const totalMemoCount = React.useMemo(() => {
+    return recentSnapshots.filter((r) => !!r.memo && r.memo.trim().length > 0).length;
+  }, [recentSnapshots]);
+
   // 필터링 및 정렬된 단속 기록 목록
   const filteredSnapshots = React.useMemo(() => {
     return recentSnapshots
       .filter((record) => {
+        // 관리자 메모 유무 필터
+        if (onlyWithMemo && (!record.memo || record.memo.trim().length === 0)) {
+          return false;
+        }
+
         // 날짜 필터
         if (selectedDateFilter !== 'all') {
           const todayStr = new Date().toISOString().split('T')[0];
@@ -170,12 +186,15 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
           if (selectedSpeedRange === '61+' && sp < 61) return false;
         }
 
-        // 번호판 검색 쿼리
+        // 번호판 및 관리자 메모 통합 검색 쿼리
         if (searchPlateQuery.trim()) {
           const query = searchPlateQuery.trim().toLowerCase();
           const cleanPlate = record.plate.replace(/\s+/g, '').toLowerCase();
+          const memoText = (record.memo || '').toLowerCase();
           const cleanQuery = query.replace(/\s+/g, '');
-          if (!cleanPlate.includes(cleanQuery)) return false;
+          const matchPlate = cleanPlate.includes(cleanQuery);
+          const matchMemo = memoText.includes(query);
+          if (!matchPlate && !matchMemo) return false;
         }
 
         return true;
@@ -185,13 +204,13 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
         if (sortOrder === 'speed_asc') return a.speed - b.speed;
         return b.id - a.id; // latest
       });
-  }, [recentSnapshots, selectedDateFilter, selectedSpeedRange, searchPlateQuery, sortOrder]);
+  }, [recentSnapshots, onlyWithMemo, selectedDateFilter, selectedSpeedRange, searchPlateQuery, sortOrder]);
 
   // 필터링된 단속 기록 CSV 다운로드 함수
   const handleDownloadCsv = () => {
     if (filteredSnapshots.length === 0) return;
 
-    // CSV 헤더 정의
+    // CSV 헤더 정의 (관리자 메모 포함)
     const headers = [
       '단속ID',
       '단속일자',
@@ -201,6 +220,8 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
       '제한속도(km/h)',
       '초과속도(km/h)',
       '과속여부',
+      '관리자메모',
+      '메모수정시각',
       '저장상태',
       'ALPR신뢰도',
     ];
@@ -217,6 +238,8 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
         speedLimit,
         overspeedDelta > 0 ? `+${overspeedDelta}` : '0',
         item.isOverspeed ? '과속' : '정상',
+        `"${(item.memo || '').replace(/"/g, '""')}"`,
+        item.memoUpdatedAt ? `"${item.memoUpdatedAt}"` : '""',
         'SD카드 및 서버 저장 완료',
         '98.5%',
       ];
@@ -784,12 +807,13 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
             </button>
 
             {/* Reset Filters Button */}
-            {(selectedDateFilter !== 'all' || selectedSpeedRange !== 'all' || searchPlateQuery.trim() !== '') && (
+            {(selectedDateFilter !== 'all' || selectedSpeedRange !== 'all' || searchPlateQuery.trim() !== '' || onlyWithMemo) && (
               <button
                 onClick={() => {
                   setSelectedDateFilter('all');
                   setSelectedSpeedRange('all');
                   setSearchPlateQuery('');
+                  setOnlyWithMemo(false);
                 }}
                 className="text-xs text-amber-400 hover:text-amber-300 flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 transition cursor-pointer"
               >
@@ -850,11 +874,11 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
             </div>
           </div>
 
-          {/* 3. 번호판 검색 */}
+          {/* 3. 번호판 및 관리자 메모 검색 */}
           <div className="flex flex-col space-y-1">
             <label className="text-[11px] text-slate-400 flex items-center space-x-1 font-medium">
               <Search className="w-3 h-3 text-amber-400" />
-              <span>차량 번호판 검색:</span>
+              <span>번호판 또는 메모 검색:</span>
             </label>
             <div className="relative">
               <input
@@ -862,7 +886,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
                 type="text"
                 value={searchPlateQuery}
                 onChange={(e) => setSearchPlateQuery(e.target.value)}
-                placeholder="예: 서울, 8291, 12가..."
+                placeholder="예: 서울, 8291, 계도장, 경찰서..."
                 className="w-full bg-slate-950 border border-slate-700/80 hover:border-slate-600 text-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 placeholder-slate-500"
               />
               <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5 pointer-events-none" />
@@ -891,7 +915,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
           </div>
         </div>
 
-        {/* Quick Speed Range Pills for fast 1-click filtering */}
+        {/* Quick Speed Range Pills and Admin Memo Toggle */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <span className="text-[11px] text-slate-500 mr-1 flex items-center gap-1">
             <Filter className="w-3 h-3 text-slate-500" />
@@ -916,6 +940,19 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
               {pill.label}
             </button>
           ))}
+
+          {/* Admin Memo Filter Button */}
+          <button
+            onClick={() => setOnlyWithMemo((prev) => !prev)}
+            className={`text-[11px] px-2.5 py-1 rounded-lg border transition cursor-pointer font-medium flex items-center gap-1 ml-auto sm:ml-2 ${
+              onlyWithMemo
+                ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-sm'
+                : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-amber-400'
+            }`}
+          >
+            <FileText className="w-3 h-3" />
+            <span>메모 작성 건만 보기 ({totalMemoCount}건)</span>
+          </button>
         </div>
 
         {/* Snapshots Grid / Scroll Display */}
@@ -939,7 +976,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
                 <div
                   key={item.id}
                   onClick={() => onOpenSnapshotModal(item)}
-                  className={`flex-shrink-0 bg-slate-950 border p-2.5 rounded-xl cursor-pointer transition w-48 space-y-1.5 text-slate-300 shadow-sm ${
+                  className={`flex-shrink-0 bg-slate-950 border p-2.5 rounded-xl cursor-pointer transition w-52 space-y-2 text-slate-300 shadow-sm ${
                     isSevere
                       ? 'border-red-900/60 hover:border-red-500 hover:bg-slate-900'
                       : 'border-slate-800 hover:border-amber-500 hover:bg-slate-900'
@@ -979,6 +1016,23 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
                       </span>
                       <span className="text-slate-500">ALPR 100%</span>
                     </div>
+                  </div>
+
+                  {/* Admin Memo Display on Card */}
+                  <div className="pt-1 border-t border-slate-800/60">
+                    {item.memo ? (
+                      <div className="bg-amber-950/40 border border-amber-500/30 rounded-lg p-1.5 text-[10px] text-amber-200/90 flex items-start gap-1 shadow-xs">
+                        <FileText className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+                        <span className="line-clamp-2 leading-tight break-all font-sans">
+                          {item.memo}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-slate-500 hover:text-amber-400 flex items-center gap-1 px-1 py-0.5 rounded transition">
+                        <Edit3 className="w-2.5 h-2.5 text-slate-500" />
+                        <span>+ 관리자 메모 작성</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

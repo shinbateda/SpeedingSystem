@@ -31,16 +31,22 @@ export const YouTubeTab: React.FC = () => {
   const categories = [
     { id: 'all' as CategoryFilter, label: '전체 보기', icon: Layers, count: YOUTUBE_CHANNELS.length },
     {
+      id: 'camera' as CategoryFilter,
+      label: '카메라 & 라즈베리파이 (AR0234 / RPi)',
+      icon: Camera,
+      count: YOUTUBE_CHANNELS.filter((c) => c.category === 'camera').length,
+    },
+    {
+      id: 'esp32' as CategoryFilter,
+      label: 'ESP32 & 임베디드 회로/방수',
+      icon: Cpu,
+      count: YOUTUBE_CHANNELS.filter((c) => c.category === 'esp32').length,
+    },
+    {
       id: 'radar' as CategoryFilter,
       label: '24GHz 레이더 (HLK-LD2451)',
       icon: Radio,
       count: YOUTUBE_CHANNELS.filter((c) => c.category === 'radar').length,
-    },
-    {
-      id: 'camera' as CategoryFilter,
-      label: '셔터 카메라 & ALPR',
-      icon: Camera,
-      count: YOUTUBE_CHANNELS.filter((c) => c.category === 'camera').length,
     },
     {
       id: 'led' as CategoryFilter,
@@ -53,12 +59,6 @@ export const YouTubeTab: React.FC = () => {
       label: '태양광 & LiFePO4 배터리',
       icon: Sun,
       count: YOUTUBE_CHANNELS.filter((c) => c.category === 'solar').length,
-    },
-    {
-      id: 'esp32' as CategoryFilter,
-      label: 'ESP32 & 회로/방수 하우징',
-      icon: Cpu,
-      count: YOUTUBE_CHANNELS.filter((c) => c.category === 'esp32').length,
     },
   ];
 
@@ -132,6 +132,51 @@ export const YouTubeTab: React.FC = () => {
 
       {/* Top 4 Domain Highlights / Key Solvers */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* 1. Camera & Raspberry Pi */}
+        <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+              <Camera className="w-4 h-4" />
+              <span>카메라 & 라즈베리파이</span>
+            </span>
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">AR0234 / RPi 4B</span>
+          </div>
+          <p className="text-xs text-slate-300">
+            글로벌 셔터 롤링 젤로 왜곡 제거, MIPI CSI-2 60fps 무손실 전송, OpenCV & YOLOv8 실시간 번호판 인식.
+          </p>
+          <a
+            href="https://www.youtube.com/results?search_query=Jeff+Geerling+Raspberry+Pi+Global+Shutter+Camera"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold inline-flex items-center gap-1 mt-1"
+          >
+            <span>추천: Jeff Geerling RPi 셔터 ↗</span>
+          </a>
+        </div>
+
+        {/* 2. ESP32 & Embedded Circuit */}
+        <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+              <Cpu className="w-4 h-4" />
+              <span>ESP32-S3 & 회로 설계</span>
+            </span>
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">서지보호 / IP67</span>
+          </div>
+          <p className="text-xs text-slate-300">
+            차량 도로변 전원 서지(TVS) 보호, 고효율 벅 컨버터 회로 설계, 옥외 결로 방지 고어텍스 방수 벤트.
+          </p>
+          <a
+            href="https://www.youtube.com/results?search_query=Phils+Lab+Microcontroller+Hardware+Design"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold inline-flex items-center gap-1 mt-1"
+          >
+            <span>추천: Phil's Lab 임베디드 회로 ↗</span>
+          </a>
+        </div>
+
+        {/* 3. 24GHz FMCW Radar */}
         <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
@@ -153,66 +198,25 @@ export const YouTubeTab: React.FC = () => {
           </a>
         </div>
 
+        {/* 4. 188 LED & Solar Battery */}
         <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-              <Camera className="w-4 h-4" />
-              <span>글로벌 셔터 & ALPR</span>
-            </span>
-            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">AR0234 / OpenCV</span>
-          </div>
-          <p className="text-xs text-slate-300">
-            고속 주행 차량의 롤링 셔터 젤로 왜곡 제거, MIPI CSI-2 60fps 캡처, YOLOv8 & PaddleOCR 실시간 번호판 추출.
-          </p>
-          <a
-            href="https://www.youtube.com/results?search_query=Jeff+Geerling+Raspberry+Pi+Global+Shutter+Camera"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold inline-flex items-center gap-1 mt-1"
-          >
-            <span>추천: Jeff Geerling 셔터 테스트 ↗</span>
-          </a>
-        </div>
-
-        <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+            <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
               <Zap className="w-4 h-4" />
-              <span>188 LED 전광판 구동</span>
+              <span>전광판 & 태양광 배터리</span>
             </span>
-            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">7-Segment 12V</span>
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">188 LED / LiFePO4</span>
           </div>
           <p className="text-xs text-slate-300">
-            옥외 직사광선 10,000cd 고휘도 LED 정전류 구동, 12V 세그먼트 스위칭, 플리커 방지 ESP32 하드웨어 타이머.
+            대형 188 7세그먼트 정전류 드라이버, 35Ah LiFePO4 영하 저온 충전 보호 BMS, 무일조 3일 전력 산출.
           </p>
           <a
             href="https://www.youtube.com/results?search_query=GreatScott+Giant+7-Segment+Display"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold inline-flex items-center gap-1 mt-1"
-          >
-            <span>추천: GreatScott! 고휘도 드라이버 ↗</span>
-          </a>
-        </div>
-
-        <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
-              <Sun className="w-4 h-4" />
-              <span>무일조 3일 태양광</span>
-            </span>
-            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">35Ah LiFePO4</span>
-          </div>
-          <p className="text-xs text-slate-300">
-            50W 패널 + 35Ah 인산철 배터리 무일조 3일 계산, 영하 0°C 저온 충전 보호 BMS, MPPT 효율 극대화.
-          </p>
-          <a
-            href="https://www.youtube.com/results?search_query=Will+Prowse+calculate+battery+bank+size"
-            target="_blank"
-            rel="noopener noreferrer"
             className="text-[11px] text-purple-400 hover:text-purple-300 font-semibold inline-flex items-center gap-1 mt-1"
           >
-            <span>추천: Will Prowse 배터리 산출 공식 ↗</span>
+            <span>추천: GreatScott! 고휘도 드라이버 ↗</span>
           </a>
         </div>
       </div>

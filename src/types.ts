@@ -38,6 +38,8 @@ export interface SnapshotRecord {
   plate: string;
   speed: number;
   isOverspeed: boolean;
+  memo?: string; // 관리자 메모
+  memoUpdatedAt?: string; // 메모 작성/수정 시각
 }
 
 export interface BOMItem {

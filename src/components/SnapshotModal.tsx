@@ -1,14 +1,72 @@
-import React, { useEffect, useRef } from 'react';
-import { ShieldAlert, X, HardDrive, Clock, Gauge, Tag } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ShieldAlert,
+  X,
+  HardDrive,
+  Clock,
+  Gauge,
+  Tag,
+  FileText,
+  Save,
+  Check,
+  Trash2,
+  Bookmark,
+} from 'lucide-react';
 import { SnapshotRecord } from '../types';
 
 interface SnapshotModalProps {
   record: SnapshotRecord | null;
   onClose: () => void;
+  onUpdateMemo?: (recordId: number, memo: string) => void;
 }
 
-export const SnapshotModal: React.FC<SnapshotModalProps> = ({ record, onClose }) => {
+const PRESET_MEMOS = [
+  '과태료 고지서 발송',
+  '경찰청 교통안전과 이첩',
+  '스쿨존 상습위반 관찰',
+  '번호판 오염/식별 점검',
+  '현장 계도 조치 완료',
+];
+
+export const SnapshotModal: React.FC<SnapshotModalProps> = ({ record, onClose, onUpdateMemo }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [memoText, setMemoText] = useState<string>('');
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (record) {
+      setMemoText(record.memo || '');
+      setIsSaved(false);
+    }
+  }, [record]);
+
+  const handleSave = () => {
+    if (!record || !onUpdateMemo) return;
+    onUpdateMemo(record.id, memoText);
+    setIsSaved(true);
+    setTimeout(() => {
+      setIsSaved(false);
+    }, 2000);
+  };
+
+  const handleClear = () => {
+    if (!record || !onUpdateMemo) return;
+    setMemoText('');
+    onUpdateMemo(record.id, '');
+    setIsSaved(true);
+    setTimeout(() => {
+      setIsSaved(false);
+    }, 2000);
+  };
+
+  const handleAddPreset = (preset: string) => {
+    setMemoText((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return preset;
+      if (trimmed.includes(preset)) return trimmed;
+      return `${trimmed} / ${preset}`;
+    });
+  };
 
   useEffect(() => {
     if (!record) return;
@@ -64,17 +122,18 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({ record, onClose })
   return (
     <div
       id="snapshotModal"
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl"
+        className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl my-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex justify-between items-center border-b border-slate-800 pb-3">
           <h3 className="font-bold text-sm text-white flex items-center space-x-2">
             <ShieldAlert className="w-4 h-4 text-red-400" />
-            <span>과속 단속 증거 이미지 (SD 카드 & 서버 전송)</span>
+            <span>과속 단속 증거 및 관리 상세 정보</span>
           </h3>
           <button
             onClick={onClose}
@@ -84,12 +143,16 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({ record, onClose })
           </button>
         </div>
 
+        {/* Shutter Canvas & Plate Details */}
         <div className="space-y-3">
-          <div className="w-full h-44 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center relative shadow-inner">
+          <div className="w-full h-40 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center relative shadow-inner">
             <canvas ref={canvasRef} id="modalCanvas" className="max-w-full max-h-full" />
             <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/70 text-[10px] text-red-400 font-mono flex items-center gap-1 border border-red-500/30">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
               GLOBAL SHUTTER RAW CAPTURE
+            </div>
+            <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/70 text-[10px] text-emerald-400 font-mono">
+              OCR 99.4%
             </div>
           </div>
 
@@ -118,7 +181,8 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({ record, onClose })
                 촬영 일시:
               </span>
               <span id="modalTime" className="text-slate-300 font-mono font-medium">
-                {record.date ? `${record.date} ` : ''}{record.time}
+                {record.date ? `${record.date} ` : ''}
+                {record.time}
               </span>
             </div>
             <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
@@ -131,12 +195,100 @@ export const SnapshotModal: React.FC<SnapshotModalProps> = ({ record, onClose })
           </div>
         </div>
 
-        <div className="pt-2">
+        {/* Admin Memo Section */}
+        <div className="bg-slate-950 rounded-xl p-3 border border-slate-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5" />
+              <span>단속 사례 관리자 메모 (Admin Memo)</span>
+            </label>
+            {record.memoUpdatedAt && (
+              <span className="text-[10px] text-slate-500 font-mono">
+                최종 수정: {record.memoUpdatedAt}
+              </span>
+            )}
+          </div>
+
+          <textarea
+            id="adminMemoTextarea"
+            value={memoText}
+            onChange={(e) => setMemoText(e.target.value)}
+            rows={3}
+            placeholder="특이사항, 단속 통지서 발송 여부, 계도 조치, 차종 정보 등 관리자 코멘트를 입력하세요..."
+            className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 resize-none transition"
+          />
+
+          {/* Quick preset chips */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <span className="text-[10px] text-slate-500 flex items-center gap-0.5 mr-0.5">
+              <Bookmark className="w-2.5 h-2.5" /> 빠른 추가:
+            </span>
+            {PRESET_MEMOS.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => handleAddPreset(preset)}
+                className="text-[10px] bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-300 border border-slate-800 hover:border-amber-500/40 px-2 py-0.5 rounded-md transition cursor-pointer"
+              >
+                + {preset}
+              </button>
+            ))}
+          </div>
+
+          {/* Action Row */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="text-[10px] text-slate-500">
+              {memoText.trim().length > 0 ? (
+                <span className="text-slate-400 font-mono">{memoText.length}자 입력됨</span>
+              ) : (
+                <span>작성된 메모 없음</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {record.memo && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="px-2.5 py-1.5 bg-slate-900 hover:bg-red-950/40 text-slate-400 hover:text-red-400 rounded-lg text-xs font-medium border border-slate-800 hover:border-red-800/40 transition flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>메모 삭제</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleSave}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  isSaved
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md'
+                }`}
+              >
+                {isSaved ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>저장 완료</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>메모 저장</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Close Button */}
+        <div className="pt-1">
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
           >
-            닫기
+            창 닫기
           </button>
         </div>
       </div>

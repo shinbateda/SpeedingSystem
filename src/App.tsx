@@ -32,6 +32,8 @@ export default function App() {
       plate: '서울34가 8291',
       speed: 48,
       isOverspeed: true,
+      memo: '스쿨존 시속 48km 주행 (+18km/h 초과) - 1차 계도장 발송 완료',
+      memoUpdatedAt: '2026-09-14 14:35:10',
     },
     {
       id: 1726297800000,
@@ -40,6 +42,8 @@ export default function App() {
       plate: '경기88나 2390',
       speed: 36,
       isOverspeed: true,
+      memo: '어린이 등하교 시간대 경미 과속 - 현장 주의 관찰 대상',
+      memoUpdatedAt: '2026-09-14 11:20:02',
     },
     {
       id: 1726297200000,
@@ -48,6 +52,8 @@ export default function App() {
       plate: '인천12다 7721',
       speed: 64,
       isOverspeed: true,
+      memo: '시속 64km 위험 과속 (+34km/h) - 관할 경찰서 과태료 고지 요청',
+      memoUpdatedAt: '2026-09-14 09:00:15',
     },
     {
       id: 1726211400000,
@@ -64,6 +70,8 @@ export default function App() {
       plate: '대구29마 4481',
       speed: 57,
       isOverspeed: true,
+      memo: '번호판 조명 약함 - 야간 적외선 보조 조명 각도 조정 필요',
+      memoUpdatedAt: '2026-09-13 15:30:20',
     },
     {
       id: 1726121400000,
@@ -76,6 +84,37 @@ export default function App() {
   ]);
   const [activeModalRecord, setActiveModalRecord] = useState<SnapshotRecord | null>(null);
   const [isFlashing, setIsFlashing] = useState<boolean>(false);
+
+  // 관리자 메모 갱신 핸들러
+  const handleUpdateMemo = useCallback((recordId: number, memo: string) => {
+    const now = new Date();
+    const timeStr = `${now.toISOString().split('T')[0]} ${now.toTimeString().split(' ')[0]}`;
+    const trimmed = memo.trim();
+
+    setRecentSnapshots((prev) =>
+      prev.map((rec) => {
+        if (rec.id === recordId) {
+          return {
+            ...rec,
+            memo: trimmed ? trimmed : undefined,
+            memoUpdatedAt: trimmed ? timeStr : undefined,
+          };
+        }
+        return rec;
+      })
+    );
+
+    setActiveModalRecord((prev) => {
+      if (prev && prev.id === recordId) {
+        return {
+          ...prev,
+          memo: trimmed ? trimmed : undefined,
+          memoUpdatedAt: trimmed ? timeStr : undefined,
+        };
+      }
+      return prev;
+    });
+  }, []);
 
   // Audio Context Ref for Synthesizer Alarm
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -175,10 +214,15 @@ export default function App() {
             recentSnapshots={recentSnapshots}
             onTriggerShutter={handleTriggerShutter}
             onOpenSnapshotModal={(rec) => setActiveModalRecord(rec)}
+            onUpdateMemo={handleUpdateMemo}
             soundEnabled={soundEnabled}
             speedLimit={speedLimit}
           />
         )}
+
+        {activeTab === 'opensource' && <OpenSourceTab />}
+
+        {activeTab === 'youtube' && <YouTubeTab />}
 
         {activeTab === 'bom' && <BomTab />}
 
@@ -196,10 +240,6 @@ export default function App() {
         )}
 
         {activeTab === 'durability' && <DurabilityTab />}
-
-        {activeTab === 'opensource' && <OpenSourceTab />}
-
-        {activeTab === 'youtube' && <YouTubeTab />}
       </main>
 
       {/* Footer */}
@@ -213,6 +253,7 @@ export default function App() {
       <SnapshotModal
         record={activeModalRecord}
         onClose={() => setActiveModalRecord(null)}
+        onUpdateMemo={handleUpdateMemo}
       />
     </div>
   );

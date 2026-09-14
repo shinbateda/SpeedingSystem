@@ -84,10 +84,18 @@ export const SmartphoneTab: React.FC<SmartphoneTabProps> = ({
                   <div
                     key={item.id}
                     onClick={() => onOpenSnapshotModal(item)}
-                    className="p-2 bg-slate-900 hover:bg-slate-850 rounded-lg border border-slate-800 text-[10px] flex justify-between items-center cursor-pointer transition"
+                    className="p-2 bg-slate-900 hover:bg-slate-850 rounded-lg border border-slate-800 text-[10px] flex flex-col gap-1 cursor-pointer transition"
                   >
-                    <span className="font-bold text-red-400">{item.speed} km/h (위반)</span>
-                    <span className="text-slate-400 font-mono">{item.time}</span>
+                    <div className="flex justify-between items-center w-full">
+                      <span className="font-bold text-red-400">{item.speed} km/h (위반)</span>
+                      <span className="text-slate-400 font-mono">{item.time}</span>
+                    </div>
+                    {item.memo && (
+                      <div className="text-[9px] text-amber-300/90 truncate flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                        <span className="truncate">{item.memo}</span>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
