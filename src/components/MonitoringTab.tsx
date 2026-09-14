@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { Vehicle, SnapshotRecord } from '../types';
 import { WeeklyOverspeedTrend } from './WeeklyOverspeedTrend';
+import { SchoolZoneSpeedSign } from './SchoolZoneSpeedSign';
 
 interface MonitoringTabProps {
   totalCarsCount: number;
@@ -45,6 +46,10 @@ interface MonitoringTabProps {
   soundEnabled: boolean;
   speedLimit: number;
   onNavigateTab?: (tab: any) => void;
+  isSimulating?: boolean;
+  onToggleSimulating?: () => void;
+  autoTabSwitchTarget?: 'smartphone' | 'server' | 'alternate' | 'off';
+  onChangeAutoTabSwitchTarget?: (target: 'smartphone' | 'server' | 'alternate' | 'off') => void;
 }
 
 const plateRegions = ['서울', '경기', '인천', '부산', '대구', '경남', '충남', '전북', '광주', '대전'];
@@ -120,6 +125,10 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
   onUpdateMemo,
   speedLimit,
   onNavigateTab,
+  isSimulating,
+  onToggleSimulating,
+  autoTabSwitchTarget = 'smartphone',
+  onChangeAutoTabSwitchTarget,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const vehiclesRef = useRef<Vehicle[]>([]);
@@ -127,8 +136,15 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
   const [isDisplayOverspeed, setIsDisplayOverspeed] = useState<boolean>(false);
   const [sdStatus, setSdStatus] = useState<'idle' | 'saving'>('idle');
 
-  // 시뮬레이션 상태 관리
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  // 시뮬레이션 상태 관리 (상위 App 상태 연동 또는 로컬 폴백)
+  const [localSimulating, setLocalSimulating] = useState<boolean>(false);
+  const activeSimulating = isSimulating !== undefined ? isSimulating : localSimulating;
+  const toggleSimulating = onToggleSimulating || (() => setLocalSimulating((prev) => !prev));
+
+  const [localAutoSwitch, setLocalAutoSwitch] = useState<'smartphone' | 'server' | 'alternate' | 'off'>('smartphone');
+  const activeAutoSwitch = autoTabSwitchTarget !== undefined ? autoTabSwitchTarget : localAutoSwitch;
+  const changeAutoSwitch = onChangeAutoTabSwitchTarget || setLocalAutoSwitch;
+
   const [simIntervalMs, setSimIntervalMs] = useState<number>(2400);
   const [simMode, setSimMode] = useState<'mixed' | 'overspeed_only'>('mixed');
   const [lastSpawned, setLastSpawned] = useState<{
@@ -283,47 +299,29 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
 
     const resize = () => {
       if (!canvas.parentElement) return;
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = canvas.parentElement.clientHeight;
+      const w = canvas.parentElement.clientWidth;
+      const h = canvas.parentElement.clientHeight || 224;
+      if (w > 50) {
+        canvas.width = w;
+        canvas.height = h;
+      }
     };
     resize();
     window.addEventListener('resize', resize);
 
+    const observer = new ResizeObserver(() => {
+      resize();
+    });
+    if (canvas.parentElement) {
+      observer.observe(canvas.parentElement);
+    }
+
     const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Asphalt Road
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(0, canvas.height * 0.25, canvas.width, canvas.height * 0.55);
-
-      // Center Dotted Line
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([18, 14]);
-      ctx.beginPath();
-      ctx.moveTo(0, canvas.height * 0.52);
-      ctx.lineTo(canvas.width, canvas.height * 0.52);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      const radarX = canvas.width * 0.33;
-      const cameraX = canvas.width * 0.66;
-
-      // Radar zone line
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(radarX, 0);
-      ctx.lineTo(radarX, canvas.height);
-      ctx.stroke();
-
-      // Camera shutter line
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(cameraX, 0);
-      ctx.lineTo(cameraX, canvas.height);
-      ctx.stroke();
+      const isVisible = canvas.width > 50;
+      const w = isVisible ? canvas.width : 800;
+      const h = isVisible ? canvas.height : 224;
+      const radarX = w * 0.33;
+      const cameraX = w * 0.66;
 
       const list = vehiclesRef.current;
       let activeDisplaySpeed = 0;
@@ -351,43 +349,81 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
           }
         }
 
-        // Render vehicle body
-        ctx.fillStyle = v.color;
-        ctx.beginPath();
-        ctx.roundRect(v.x, v.y - 14, 60, 28, 6);
-        ctx.fill();
-
-        // Windshield & Roof
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
-        ctx.fillRect(v.x + 18, v.y - 11, 24, 22);
-
-        // Vehicle Plate Graphic
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(v.x + 8, v.y - 5, 44, 11);
-        ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 8px sans-serif';
-        const plateParts = v.plate.split(' ');
-        const plateText = plateParts[1] ? `${plateParts[0].slice(-2)}${plateParts[1]}` : v.plate;
-        ctx.fillText(plateText, v.x + 10, v.y + 3);
-
-        // Headlights
-        ctx.fillStyle = '#fef08a';
-        ctx.fillRect(v.x + 56, v.y - 12, 3, 5);
-        ctx.fillRect(v.x + 56, v.y + 7, 3, 5);
-
-        // Bounding Box
-        ctx.strokeStyle = v.isOverspeed ? '#ef4444' : '#10b981';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(v.x - 3, v.y - 18, 66, 36);
-
-        // Dynamic Speed Tag above vehicle
-        ctx.fillStyle = v.isOverspeed ? '#ef4444' : '#10b981';
-        ctx.font = 'bold 10px monospace';
-        ctx.fillText(`${Math.round(v.speed)} km/h`, v.x + 6, v.y - 22);
-
         // Remove out-of-screen vehicles
-        if (v.x > canvas.width + 120) {
+        if (v.x > w + 120) {
           list.splice(i, 1);
+        }
+      }
+
+      if (isVisible) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Asphalt Road
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, canvas.height * 0.25, canvas.width, canvas.height * 0.55);
+
+        // Center Dotted Line
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([18, 14]);
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height * 0.52);
+        ctx.lineTo(canvas.width, canvas.height * 0.52);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Radar zone line
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(radarX, 0);
+        ctx.lineTo(radarX, canvas.height);
+        ctx.stroke();
+
+        // Camera shutter line
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cameraX, 0);
+        ctx.lineTo(cameraX, canvas.height);
+        ctx.stroke();
+
+        // Render each vehicle
+        for (let i = 0; i < list.length; i++) {
+          const v = list[i];
+          // Render vehicle body
+          ctx.fillStyle = v.color;
+          ctx.beginPath();
+          ctx.roundRect(v.x, v.y - 14, 60, 28, 6);
+          ctx.fill();
+
+          // Windshield & Roof
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+          ctx.fillRect(v.x + 18, v.y - 11, 24, 22);
+
+          // Vehicle Plate Graphic
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(v.x + 8, v.y - 5, 44, 11);
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 8px sans-serif';
+          const plateParts = v.plate.split(' ');
+          const plateText = plateParts[1] ? `${plateParts[0].slice(-2)}${plateParts[1]}` : v.plate;
+          ctx.fillText(plateText, v.x + 10, v.y + 3);
+
+          // Headlights
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(v.x + 56, v.y - 12, 3, 5);
+          ctx.fillRect(v.x + 56, v.y + 7, 3, 5);
+
+          // Bounding Box
+          ctx.strokeStyle = v.isOverspeed ? '#ef4444' : '#10b981';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(v.x - 3, v.y - 18, 66, 36);
+
+          // Dynamic Speed Tag above vehicle
+          ctx.fillStyle = v.isOverspeed ? '#ef4444' : '#10b981';
+          ctx.font = 'bold 10px monospace';
+          ctx.fillText(`${Math.round(v.speed)} km/h`, v.x + 6, v.y - 22);
         }
       }
 
@@ -407,6 +443,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resize);
+      observer.disconnect();
     };
   }, [onTriggerShutter]);
 
@@ -457,7 +494,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
 
   // '시뮬레이션 시작' 자동 루프 타이머
   useEffect(() => {
-    if (!isSimulating) return;
+    if (!activeSimulating) return;
 
     // 시뮬레이션 시작 즉시 첫 번째 차량 발생
     spawnVehicle(simMode === 'overspeed_only' ? 'overspeed' : 'random');
@@ -467,7 +504,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
     }, simIntervalMs);
 
     return () => clearInterval(interval);
-  }, [isSimulating, simIntervalMs, simMode, speedLimit]);
+  }, [activeSimulating, simIntervalMs, simMode, speedLimit]);
 
   const handleManualTest = () => {
     const { speed, severity } = generateRandomVehicleSpeed('overspeed', speedLimit);
@@ -573,57 +610,15 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
 
       {/* 188 LED 전광판 & 실시간 캔버스 도로 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* 1단 1열 188 LED 전광판 시뮬레이션 */}
-        <div className="dfs-panel rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden min-h-[340px] border border-slate-800">
-          <div>
-            <div className="w-full bg-amber-500 text-slate-950 font-black text-center py-2 rounded-xl text-base tracking-wider shadow">
-              속도 제한 구역 ({speedLimit} KM/H 이상 단속)
-            </div>
-            <p className="text-[11px] text-slate-400 text-center mt-2">
-              1단 1열 188 LED PCB 하드웨어 응답 모듈
-            </p>
-          </div>
-
-          {/* 188 LED Digital Box */}
-          <div className="led-188 rounded-2xl p-5 my-3 text-center flex flex-col items-center justify-center relative">
-            <span className="text-[10px] text-amber-500/60 font-mono tracking-widest block mb-1">
-              REALTIME RADAR SPEED
-            </span>
-            <div
-              id="dfsSpeedDisplay"
-              className={`font-digital text-6xl font-black tracking-wider transition-all duration-150 py-1 ${
-                isDisplayOverspeed
-                  ? 'text-red-500 animate-pulse drop-shadow-[0_0_12px_rgba(239,68,68,0.8)]'
-                  : currentDisplaySpeed > 0
-                  ? 'text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.6)]'
-                  : 'text-slate-600'
-              }`}
-            >
-              {currentDisplaySpeed > 0 ? String(currentDisplaySpeed).padStart(2, '0') : '00'}
-            </div>
-            <span className="text-xs font-mono text-slate-500 mt-1">KM/H</span>
-          </div>
-
-          {/* Operational Indicators */}
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/80 border border-slate-800">
-              <span className="text-slate-400">카메라 셔터 연동 (SD):</span>
-              <span
-                id="sdStatusText"
-                className={`font-semibold ${
-                  sdStatus === 'saving' ? 'text-red-400 animate-pulse' : 'text-slate-400'
-                }`}
-              >
-                {sdStatus === 'saving' ? 'SD카드 저장 중... (OK)' : '대기 중'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/80 border border-slate-800">
-              <span className="text-slate-400">태양광 & 배터리(35Ah):</span>
-              <span className="font-mono text-emerald-400 flex items-center gap-1">
-                <BatteryCharging className="w-3.5 h-3.5" /> 13.8V (정상 충전)
-              </span>
-            </div>
-          </div>
+        {/* 1단 1열 188 LED 전광판 시뮬레이션 (현장 지주대 & 셔터 카메라 일체형 실물 하드웨어 모델) */}
+        <div className="dfs-panel rounded-2xl p-3 flex flex-col justify-between items-center relative overflow-hidden min-h-[460px] border border-slate-800">
+          <SchoolZoneSpeedSign
+            speed={currentDisplaySpeed}
+            speedLimit={speedLimit}
+            isOverspeed={isDisplayOverspeed}
+            sdStatus={sdStatus}
+            batteryVoltage={13.8}
+          />
         </div>
 
         {/* Live Road Track Canvas & Simulation Controls */}
@@ -664,7 +659,7 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
             </div>
 
             {/* Simulation Status Watermark Indicator */}
-            {isSimulating && (
+            {activeSimulating && (
               <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1 bg-red-950/80 border border-red-800/80 rounded-lg text-[10px] text-red-300 font-semibold animate-pulse pointer-events-none">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
                 <span>가상 트래픽 시뮬레이션 동작 중 ({simIntervalMs / 1000}s 주기)</span>
@@ -713,21 +708,111 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
             )}
           </div>
 
-          {/* Simulation Controls: Primary Start/Stop & Random Buttons */}
+          {/* Simulation Controls: Auto Tab Switch Linkage & Start/Stop & Random Buttons */}
           <div className="space-y-2">
+            {/* 단속 사진 촬영 시 자동 화면 이동(스마트폰 및 관제서버 연동) 옵션 바 */}
+            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">단속 사진 촬영 시 자동 화면 이동 연동:</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono border ${
+                        activeAutoSwitch !== 'off'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {activeAutoSwitch === 'smartphone'
+                        ? '2. 스마트폰 탭 자동 전환'
+                        : activeAutoSwitch === 'server'
+                        ? '3. 관제 서버 탭 자동 전환'
+                        : activeAutoSwitch === 'alternate'
+                        ? '스마트폰 ↔ 관제서버 교대 전환'
+                        : '자동 전환 끔'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    시뮬레이션에서 과속 차량이 찍히면 지정된 모니터링 화면으로 즉시 전환됩니다.
+                  </p>
+                </div>
+              </div>
+
+              {/* 연동 대상 선택 버튼 그룹 */}
+              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 self-end sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => changeAutoSwitch('smartphone')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    activeAutoSwitch === 'smartphone'
+                      ? 'bg-amber-500 text-slate-950 shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="과속 사진 촬영 시 2. 스마트폰 과속 모니터링 탭으로 자동 이동"
+                >
+                  <Smartphone className="w-3 h-3" />
+                  <span>스마트폰</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => changeAutoSwitch('server')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    activeAutoSwitch === 'server'
+                      ? 'bg-cyan-500 text-slate-950 shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="과속 사진 촬영 시 3. 관제 서버 탭으로 자동 이동"
+                >
+                  <Server className="w-3 h-3" />
+                  <span>관제 서버</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => changeAutoSwitch('alternate')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    activeAutoSwitch === 'alternate'
+                      ? 'bg-purple-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="단속 발생 시마다 스마트폰 ↔ 관제서버 교대 전환"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>교대</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => changeAutoSwitch('off')}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    activeAutoSwitch === 'off'
+                      ? 'bg-slate-800 text-slate-200'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                  title="자동 화면 전환 해제"
+                >
+                  끔
+                </button>
+              </div>
+            </div>
+
             {/* Top Row: Primary '시뮬레이션 시작' Button & Settings */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
               {/* Main Simulation Start/Stop Button */}
               <button
                 id="startSimulationBtn"
-                onClick={() => setIsSimulating((prev) => !prev)}
+                onClick={toggleSimulating}
                 className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm cursor-pointer ${
-                  isSimulating
+                  activeSimulating
                     ? 'bg-red-600 hover:bg-red-500 text-white ring-2 ring-red-400/40'
                     : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white ring-1 ring-emerald-400/30'
                 }`}
               >
-                {isSimulating ? (
+                {activeSimulating ? (
                   <>
                     <Square className="w-4 h-4 fill-white" />
                     <span>시뮬레이션 중지</span>
@@ -735,7 +820,19 @@ export const MonitoringTab: React.FC<MonitoringTabProps> = ({
                 ) : (
                   <>
                     <Play className="w-4 h-4 fill-white" />
-                    <span>시뮬레이션 시작 (랜덤 과속 차량 자동 발생)</span>
+                    <span>
+                      시뮬레이션 시작 (
+                      {activeAutoSwitch !== 'off'
+                        ? '단속 시 ' +
+                          (activeAutoSwitch === 'smartphone'
+                            ? '스마트폰'
+                            : activeAutoSwitch === 'server'
+                            ? '관제서버'
+                            : '교대') +
+                          ' 자동 전환'
+                        : '랜덤 과속 차량 자동 발생'}
+                      )
+                    </span>
                   </>
                 )}
               </button>

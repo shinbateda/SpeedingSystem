@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { MonitoringTab } from './components/MonitoringTab';
@@ -14,10 +14,12 @@ import { CameraInterfaceTab } from './components/CameraInterfaceTab';
 import { SmartphoneTab } from './components/SmartphoneTab';
 import { CentralServerTab } from './components/CentralServerTab';
 import { DurabilityTab } from './components/DurabilityTab';
+import { InstallationTab } from './components/InstallationTab';
 import { OpenSourceTab } from './components/OpenSourceTab';
 import { YouTubeTab } from './components/YouTubeTab';
 import { SnapshotModal } from './components/SnapshotModal';
 import { TabType, Vehicle, SnapshotRecord } from './types';
+import { Camera, Smartphone, Server, RotateCcw } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('monitor');
@@ -133,6 +135,27 @@ export default function App() {
   const [activeModalRecord, setActiveModalRecord] = useState<SnapshotRecord | null>(null);
   const [isFlashing, setIsFlashing] = useState<boolean>(false);
 
+  // 자동 탭 전환 설정: 사진이 찍혔을 때 'smartphone' | 'server' | 'alternate' | 'off'
+  const [autoTabSwitchTarget, setAutoTabSwitchTarget] = useState<'smartphone' | 'server' | 'alternate' | 'off'>('smartphone');
+  const [lastSwitchTarget, setLastSwitchTarget] = useState<'smartphone' | 'server'>('server');
+  const [autoSwitchToast, setAutoSwitchToast] = useState<{
+    plate: string;
+    speed: number;
+    targetTab: 'smartphone' | 'server';
+    time: string;
+  } | null>(null);
+
+  // 시뮬레이터 구동 상태 (전체 탭 연동 및 백그라운드 구동)
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!autoSwitchToast) return;
+    const timer = setTimeout(() => {
+      setAutoSwitchToast(null);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [autoSwitchToast]);
+
   // 관리자 메모 갱신 핸들러
   const handleUpdateMemo = useCallback((recordId: number, memo: string) => {
     const now = new Date();
@@ -228,9 +251,30 @@ export default function App() {
         setOverspeedCount((prev) => prev + 1);
         setSdSavedCount((prev) => prev + 1);
         setRecentSnapshots((prev) => [record, ...prev.slice(0, 49)]);
+
+        // 과속 사진이 찍혔을 때 스마트폰 과속 모니터링 및 관제서버 탭으로 자동 변경
+        if (autoTabSwitchTarget !== 'off') {
+          let nextTab: 'smartphone' | 'server' = 'smartphone';
+          if (autoTabSwitchTarget === 'smartphone') {
+            nextTab = 'smartphone';
+          } else if (autoTabSwitchTarget === 'server') {
+            nextTab = 'server';
+          } else if (autoTabSwitchTarget === 'alternate') {
+            nextTab = lastSwitchTarget === 'smartphone' ? 'server' : 'smartphone';
+            setLastSwitchTarget(nextTab);
+          }
+
+          setActiveTab(nextTab);
+          setAutoSwitchToast({
+            plate: record.plate,
+            speed: record.speed,
+            targetTab: nextTab,
+            time: record.time,
+          });
+        }
       }
     },
-    [playWarningSound]
+    [playWarningSound, autoTabSwitchTarget, lastSwitchTarget]
   );
 
   return (
@@ -252,9 +296,59 @@ export default function App() {
       {/* Navigation Tabs */}
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
+      {/* 과속 단속 사진 촬영 시 자동 화면 이동 안내 배너 */}
+      {autoSwitchToast && (
+        <div
+          id="autoSwitchNotification"
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[92%] bg-slate-900/95 border border-amber-500/80 backdrop-blur-md p-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 ring-2 ring-amber-500/30"
+        >
+          <div className="flex items-center gap-3 text-xs min-w-0">
+            <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl shrink-0 border border-amber-500/30">
+              <Camera className="w-5 h-5 animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold text-white">과속 단속 사진 촬영 연동</span>
+                <span className="bg-red-950 text-red-300 border border-red-800 px-1.5 py-0.5 rounded font-mono font-black text-[11px]">
+                  {autoSwitchToast.plate}
+                </span>
+                <span className="text-red-400 font-mono font-bold text-[11px]">
+                  {autoSwitchToast.speed} km/h
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5 truncate">
+                [{autoSwitchToast.targetTab === 'smartphone' ? '2. 스마트폰 과속 모니터링' : '3. 관제 서버'}] 탭으로 자동 화면 전환되었습니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setActiveTab('monitor');
+                setAutoSwitchToast(null);
+              }}
+              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition cursor-pointer flex items-center gap-1 shadow"
+              title="1. 시뮬레이터 탭으로 즉시 복귀"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>시뮬레이터 복귀</span>
+            </button>
+            <button
+              onClick={() => setAutoSwitchToast(null)}
+              className="text-slate-400 hover:text-white text-sm p-1 cursor-pointer"
+              title="닫기"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-grow w-full space-y-4">
-        {activeTab === 'monitor' && (
+        {/* 시뮬레이터 탭: 탭 전환 후에도 백그라운드 시뮬레이션 연속성을 위해 유지 */}
+        <div className={activeTab === 'monitor' ? 'block' : 'hidden'}>
           <MonitoringTab
             totalCarsCount={totalCarsCount}
             overspeedCount={overspeedCount}
@@ -266,8 +360,12 @@ export default function App() {
             soundEnabled={soundEnabled}
             speedLimit={speedLimit}
             onNavigateTab={setActiveTab}
+            isSimulating={isSimulating}
+            onToggleSimulating={() => setIsSimulating((prev) => !prev)}
+            autoTabSwitchTarget={autoTabSwitchTarget}
+            onChangeAutoTabSwitchTarget={setAutoTabSwitchTarget}
           />
-        )}
+        </div>
 
         {activeTab === 'opensource' && <OpenSourceTab />}
 
@@ -289,6 +387,11 @@ export default function App() {
             onOpenSnapshotModal={(rec) => setActiveModalRecord(rec)}
             onTriggerShutter={handleTriggerShutter}
             soundEnabled={soundEnabled}
+            onNavigateTab={setActiveTab}
+            isSimulating={isSimulating}
+            onToggleSimulating={() => setIsSimulating((prev) => !prev)}
+            autoTabSwitchTarget={autoTabSwitchTarget}
+            onChangeAutoTabSwitchTarget={setAutoTabSwitchTarget}
           />
         )}
 
@@ -297,10 +400,18 @@ export default function App() {
             recentSnapshots={recentSnapshots}
             speedLimit={speedLimit}
             onOpenSnapshotModal={(rec) => setActiveModalRecord(rec)}
+            onNavigateTab={setActiveTab}
+            isSimulating={isSimulating}
+            onToggleSimulating={() => setIsSimulating((prev) => !prev)}
+            onTriggerShutter={handleTriggerShutter}
+            autoTabSwitchTarget={autoTabSwitchTarget}
+            onChangeAutoTabSwitchTarget={setAutoTabSwitchTarget}
           />
         )}
 
         {activeTab === 'durability' && <DurabilityTab />}
+
+        {activeTab === 'installation' && <InstallationTab onNavigateTab={setActiveTab} />}
       </main>
 
       {/* Footer */}

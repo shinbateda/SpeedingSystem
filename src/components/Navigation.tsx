@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Calculator, Zap, Camera, Smartphone, Cpu, Github, Youtube, Cable, Server } from 'lucide-react';
+import { Activity, Calculator, Zap, Camera, Smartphone, Cpu, Github, Youtube, Cable, Server, HardHat } from 'lucide-react';
 import { TabType } from '../types';
 
 interface NavigationProps {
@@ -19,6 +19,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
     { id: 'specs' as TabType, label: '8. 셔터 카메라 규격', icon: Camera },
     { id: 'interface' as TabType, label: '9. 인터페이스 (GMSL2/MIPI/USB)', icon: Cable },
     { id: 'durability' as TabType, label: '10. RPi 내구성 & 양산 검토', icon: Cpu },
+    { id: 'installation' as TabType, label: '11. 시스템 현장 설치', icon: HardHat },
   ];
 
   return (

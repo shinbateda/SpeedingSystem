@@ -8,7 +8,8 @@ export type TabType =
   | 'power'
   | 'specs'
   | 'interface'
-  | 'durability';
+  | 'durability'
+  | 'installation';
 
 export interface YouTubeChannelItem {
   id: string;

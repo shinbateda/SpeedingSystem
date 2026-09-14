@@ -25,6 +25,10 @@ import {
   HardDrive,
   Copy,
   Check,
+  Play,
+  Square,
+  Smartphone,
+  RotateCcw,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -37,12 +41,18 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { SnapshotRecord } from '../types';
+import { SnapshotRecord, Vehicle } from '../types';
 
 interface CentralServerTabProps {
   recentSnapshots: SnapshotRecord[];
   speedLimit: number;
   onOpenSnapshotModal: (record: SnapshotRecord) => void;
+  onNavigateTab?: (tab: 'monitor' | 'smartphone' | 'server' | string) => void;
+  isSimulating?: boolean;
+  onToggleSimulating?: () => void;
+  onTriggerShutter?: (vehicle: Partial<Vehicle>) => void;
+  autoTabSwitchTarget?: 'smartphone' | 'server' | 'alternate' | 'off';
+  onChangeAutoTabSwitchTarget?: (target: 'smartphone' | 'server' | 'alternate' | 'off') => void;
 }
 
 interface EnforcementNode {
@@ -71,6 +81,12 @@ export const CentralServerTab: React.FC<CentralServerTabProps> = ({
   recentSnapshots,
   speedLimit,
   onOpenSnapshotModal,
+  onNavigateTab,
+  isSimulating = false,
+  onToggleSimulating,
+  onTriggerShutter,
+  autoTabSwitchTarget = 'server',
+  onChangeAutoTabSwitchTarget,
 }) => {
   // Active Sub-view inside Server Tab
   const [activeServerView, setActiveServerView] = useState<'feed' | 'map' | 'analytics' | 'api'>('feed');
@@ -266,6 +282,84 @@ export const CentralServerTab: React.FC<CentralServerTabProps> = ({
             <span>DB: <strong className="text-emerald-400">TimescaleDB</strong></span>
             <span>관제노드: <strong className="text-amber-400">4 / 4 가동 중</strong></span>
           </div>
+        </div>
+      </div>
+
+      {/* 시뮬레이터 연동 및 자동 탭 전환 제어 툴바 */}
+      <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs shadow-lg">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+            <Activity className="w-4 h-4 animate-pulse" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-white">현장 셔터 카메라 시뮬레이터 연동:</span>
+              <span
+                className={`px-2 py-0.5 rounded-full font-bold text-[10px] border ${
+                  isSimulating
+                    ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                }`}
+              >
+                {isSimulating ? '시뮬레이션 동작 중 (과속 차량 자동 수집)' : '시뮬레이션 대기 중'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              {autoTabSwitchTarget === 'server'
+                ? '현재 [관제 서버 탭 우선 자동 전환] 모드입니다. 단속 시 즉시 이 관제 웹 화면으로 전환되어 최신 로그가 갱신됩니다.'
+                : autoTabSwitchTarget === 'smartphone'
+                ? '현재 [스마트폰 과속 모니터링 탭 자동 전환] 모드입니다.'
+                : autoTabSwitchTarget === 'alternate'
+                ? '현재 [스마트폰 ↔ 관제서버 교대 전환] 모드입니다.'
+                : '현재 자동 화면 전환이 꺼져 있습니다.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto flex-wrap">
+          {onToggleSimulating && (
+            <button
+              onClick={onToggleSimulating}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer ${
+                isSimulating
+                  ? 'bg-red-600 hover:bg-red-500 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              }`}
+            >
+              {isSimulating ? (
+                <>
+                  <Square className="w-3.5 h-3.5 fill-white" />
+                  <span>시뮬레이션 중지</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <span>시뮬레이션 시작</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {onNavigateTab && (
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <button
+                onClick={() => onNavigateTab('monitor')}
+                className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                title="1. 시뮬레이터 화면으로 이동"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>시뮬레이터 가기</span>
+              </button>
+              <button
+                onClick={() => onNavigateTab('smartphone')}
+                className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-amber-400 hover:text-amber-300 rounded-lg transition text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                title="2. 스마트폰 과속 모니터링 화면으로 이동"
+              >
+                <Smartphone className="w-3 h-3" />
+                <span>스마트폰 가기</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
